@@ -95,13 +95,25 @@ async def approve(callback: types.CallbackQuery):
     if not post:
         return
 
+    user = callback.from_user
+
+    # формируем контакты
+    if user.username:
+        contact = f"@{user.username}"
+    else:
+        contact = f'<a href="tg://user?id={user.id}">Связаться</a>'
+
     formatted = (
         f"📢 Новый пост\n\n"
         f"{post[0]}\n\n"
-        f"👤 Автор: @{callback.from_user.username or 'не указан'}"
+        f"📞 Контакт: {contact}"
     )
 
-    await bot.send_message(CHANNEL_ID, formatted)
+    await bot.send_message(
+        CHANNEL_ID,
+        formatted,
+        parse_mode="HTML"
+    )
 
     update_status(post_id, "approved")
 
