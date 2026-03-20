@@ -13,15 +13,30 @@ dp = Dispatcher()
 @dp.message(CommandStart())
 async def start(message: types.Message):
     await message.answer(
-        "Привет!\n\nТы можешь отправить пост на публикацию.",
-        reply_markup=main_menu()
-    )
+    "👋 Привет!\n\n"
+    "Здесь ты можешь разместить свой пост в нашем канале."
+    "📌 Как это работает:"
+    "1. Нажимаешь «ВЫЛОЖИТЬ ПОСТ»"
+    "2. Пишешь текст"
+    "3. Я отправляю его на модерацию"
+    "После проверки пост появится в канале 🚀",
+    reply_markup=main_menu()
+)
 
 
 @dp.message(F.text == "ВЫЛОЖИТЬ ПОСТ")
 async def create_post(message: types.Message):
-    await message.answer("Напиши текст поста одним сообщением:")
+    await message.answer(
+    "📋 Что должно быть в заявке:
+     • 📍 Адрес
+     • ⏰ Время выполнения работы
+     • 👷 Количество грузчиков
+     • 🧾 Описание задачи (что нужно сделать)
+     • 💰 Оплата (руб./час)
 
+     ⚠️ Важно:
+Заявки без полного набора данных не рассматриваются и не публикуются."
+)
 
 @dp.message(F.text == "МОИ ПОСТЫ")
 async def my_posts(message: types.Message):
@@ -31,9 +46,15 @@ async def my_posts(message: types.Message):
         await message.answer("У тебя пока нет постов")
         return
 
+    status_map = {
+        "pending": "⏳ На модерации",
+        "approved": "✅ Опубликован",
+        "rejected": "❌ Отклонён"
+    }
+
     text = ""
     for p in posts:
-        text += f"{p[0]}\nСтатус: {p[1]}\n\n"
+        text += f"{p[0]}\nСтатус: {status_map.get(p[1], p[1])}\n\n"
 
     await message.answer(text)
 
@@ -66,7 +87,13 @@ async def approve(callback: types.CallbackQuery):
     if not post:
         return
 
-    await bot.send_message(CHANNEL_ID, post[0])
+    formatted = (
+    f"📢 Новый пост\n\n"
+    f"{post[0]}\n\n"
+    f"👤 Автор: @{callback.from_user.username or 'не указан'}"
+)
+
+await bot.send_message(CHANNEL_ID, formatted)
     update_status(post_id, "approved")
 
     await callback.message.edit_text("✅ Опубликовано")
@@ -76,7 +103,15 @@ async def approve(callback: types.CallbackQuery):
 async def reject(callback: types.CallbackQuery):
     post_id = int(callback.data.split("_")[1])
 
+    # получаем пользователя
+    cursor.execute("SELECT user_id FROM posts WHERE id=?", (post_id,))
+    user_id = cursor.fetchone()[0]
+
     update_status(post_id, "rejected")
+
+    # уведомление пользователю
+    await bot.send_message(user_id, "❌ Твой пост отклонён модератором")
+
     await callback.message.edit_text("❌ Отклонено")
 
 
