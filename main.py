@@ -91,21 +91,30 @@ async def handle_post(message: types.Message):
 async def approve(callback: types.CallbackQuery):
     post_id = int(callback.data.split("_")[1])
 
-    post = get_post(post_id)
-    if not post:
+    # получаем пост + user_id автора
+    cursor.execute("SELECT text, user_id FROM posts WHERE id=?", (post_id,))
+    result = cursor.fetchone()
+
+    if not result:
         return
 
-    user = callback.from_user
+    text, user_id = result
 
-    # формируем контакты
-    if user.username:
+    # получаем инфу о пользователе
+    try:
+        user = await bot.get_chat(user_id)
+    except:
+        user = None
+
+    # формируем контакт
+    if user and user.username:
         contact = f"@{user.username}"
     else:
-        contact = f'<a href="tg://user?id={user.id}">Связаться</a>'
+        contact = f'<a href="tg://user?id={user_id}">Связаться</a>'
 
     formatted = (
         f"📢 Новый пост\n\n"
-        f"{post[0]}\n\n"
+        f"{text}\n\n"
         f"📞 Контакт: {contact}"
     )
 
