@@ -88,12 +88,13 @@ async def approve(callback: types.CallbackQuery):
         return
 
     formatted = (
-    f"📢 Новый пост\n\n"
-    f"{post[0]}\n\n"
-    f"👤 Автор: @{callback.from_user.username or 'не указан'}"
-)
+        f"📢 Новый пост\n\n"
+        f"{post[0]}\n\n"
+        f"👤 Автор: @{callback.from_user.username or 'не указан'}"
+    )
 
-await bot.send_message(CHANNEL_ID, formatted)
+    await bot.send_message(CHANNEL_ID, formatted)
+
     update_status(post_id, "approved")
 
     await callback.message.edit_text("✅ Опубликовано")
